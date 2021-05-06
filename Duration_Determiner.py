@@ -40,6 +40,7 @@ then finds the combined duration of all media files.
 """)
 
 single_dig_pattern = re.compile(r'\.[0-9]')
+multi_dig_pattern = re.compile(r'([0-9]*)')
 illegal_apostrophe = re.compile(r"'")
 illegal_quotes = re.compile(r'"')
 ghost_file_pattern = re.compile(r'^(\.)[<>-_.,+!?£$%^&*a-zA-Z0-9]*')
@@ -52,6 +53,7 @@ accepted_file_types = [
                     '.mkv',
                     '.m4v',
                     ]
+
 
 
 def get_date():
@@ -147,7 +149,7 @@ def predict_avid_size(combined_duration):
 
     return twenty_three_nine_eight, twenty_four, twenty_five, twenty_nine_nine_seven
 
-    
+
 while True:
     choice = ""
     root_length = 0
@@ -156,9 +158,14 @@ while True:
     print('-'*60)
     print()
 
-    input_directory = input('Please drag in a folder to scan the duration (or just provide a duration in seconds for quick maths): ')
+    input_directory = input('Please drag in a folder to scan the duration (or just provide seconds for quick maths): ')
+    
+    if illegal_apostrophe.search(input_directory):
+        input_directory = input_directory.replace("'","")
+    if illegal_quotes.search(input_directory):
+        input_directory = input_directory.replace('"',"")
 
-    if re.findall(r"[0-9]*", input_directory):
+    if "/" not in input_directory and "\\" not in input_directory:
         input_directory = int(input_directory)
         combined_duration = input_directory
         combined_duration = combined_duration * 1000
@@ -169,12 +176,6 @@ while True:
         print(f"Estimated DNxLB ingest size at 25fps based on duration: {twenty_five}")
         print(f"Estimated DNxLB ingest size at 29.97fps based on duration: {twenty_nine_nine_seven}\n")
         continue
-
-
-    if illegal_apostrophe.search(input_directory):
-        input_directory = input_directory.replace("'","")
-    if illegal_quotes.search(input_directory):
-        input_directory = input_directory.replace('"',"")
 
     root_length, folder_name_for_output_file = get_root_length(input_directory)
 
@@ -189,6 +190,8 @@ while True:
                 log_file.write(str(attribute))
                 log_file.write("\n")
 
+    print("Scanning files... ")
+    print("1", end="")
     file_count = 0
     error_count = 0
     for root, dir_path, files in os.walk(input_directory):
@@ -243,6 +246,8 @@ while True:
                     else:
                         pass
             file_count += 1
+            print("\r%d"%file_count, end="")
+
     twenty_three_nine_eight, twenty_four, twenty_five, twenty_nine_nine_seven = predict_avid_size(combined_duration)
     format_duration = format_milliseconds(combined_duration)
 
